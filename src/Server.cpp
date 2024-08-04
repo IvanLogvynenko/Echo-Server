@@ -1,6 +1,7 @@
 #include "Server.hpp"
 
-Server::Server() : m_socket(0), m_port(0) {}
+Server::Server() : m_socket(0), m_port(0), m_connection_handler(nullptr) {}
+
 Server::Server(Server &other)
 {
     if (this == &other) 
@@ -53,7 +54,7 @@ std::thread* Server::startNewMessageIncomeThread(Connection* connection) {
 
 		pollfd data = (pollfd) { *connection, POLLIN, 0 };
 
-		while (!this->m_thread_stop.load() && !this->m_message_hangling_stop.load()) {
+		while (this->m_handle_message_income) {
 			int poll_res = poll(&data, 1, HANDLING_TIMEOUT);
 			
 			std::string message;
@@ -88,42 +89,45 @@ std::thread* Server::startNewMessageIncomeThread(Connection* connection) {
 
 void Server::startEventHandler()
 {
-	if (m_main_thread.load())
-		return;
+	// if (m_connection_handler.load())
+	// 	return;
 
-	m_main_thread.store( std::move( new std::thread( [&]() {
+	// m_connection_handler.store( std::move( new std::thread( [&]() {
 
-	ILOG("Starting main thread");
+	// 	ILOG("Starting main thread");
 
-	while(!this->m_thread_stop.load()) {
-		if (!this->m_handle_connection) {
-			std::unique_lock<std::mutex> lock(this->m_main_thread_mutex);
-			this->m_main_thread_lock.wait(lock);
-		}
+	// 	while(!this->m_thread_stop.load()) {
+	// 		if (!this->m_handle_connection) {
+	// 			std::unique_lock<std::mutex> lock(this->m_main_thread_mutex);
+	// 			this->m_main_thread_lock.wait(lock);
+	// 		}
 
-		Connection* connection = this->awaitNewConnection();
-		if (connection->isEmpty()) 
-			delete connection;
-		
-		if (!this->m_handle_message_income)
-			continue;
+	// 		Connection* connection = this->awaitNewConnection();
+	// 		if (connection->isEmpty()) 
+	// 			delete connection;
+			
+	// 		if (!this->m_handle_message_income)
+	// 			continue;
 
-		std::lock_guard<std::mutex> lock(this->m_message_income_threads_lock);
-		this->m_message_income_threads[*connection] = startNewMessageIncomeThread(connection);
-	}
-	delete this->m_main_thread.load();
-	})));
+	// 		std::lock_guard<std::mutex> lock(this->m_message_income_threads_lock);
+	// 		this->m_message_income_threads[*connection] = startNewMessageIncomeThread(connection);
+	// 	}
+
+
+
+	// 	delete this->m_connection_handler.load();
+	// })));
 }
 void Server::stopEventHandler()
 {
-	if (!m_main_thread.load())
-        return;
+	// if (!m_connection_handler.load())
+    //     return;
 
-    ILOG("Stopping main thread");
-	this->m_thread_stop.store(true);
-	m_main_thread_lock.notify_one();
-    m_main_thread.load()->join();
-    m_main_thread.store(nullptr);
+    // ILOG("Stopping main thread");
+	// this->m_thread_stop.store(true);
+	// m_main_thread_lock.notify_one();
+    // m_connection_handler.load()->join();
+    // m_connection_handler.store(nullptr);
 }
 
 // * configuration methods
@@ -159,7 +163,7 @@ Server Server::host(uint16_t port)
 	server.m_port = port;
 	server.m_socket = socket_fd;
 	ILOG("Server started on port " << port);
-	LOG("Current socket ")
+	LOG("Current socket " << socket_fd);
 	return server;
 }
 
@@ -229,37 +233,68 @@ std::string Server::awaitNewMessage(
 }
 
 void Server::startConnectionHandling(std::function<Connection* (Connection *)> on_connect)
-{
+{	
 	if (m_handle_connection)
 		return;
 
-	m_handle_connection = true;
-	m_main_thread_lock.notify_one();
-
 	if (on_connect)
 		this->m_on_connect = std::move(on_connect);
+
+	m_handle_connection = true;
+	// m_main_thread_lock.notify_one();
 	
-	if (!m_main_thread.load())
-		this->startEventHandler();
+	LOG("Starting connection handling");
+	m_connection_handler.store( std::move( new std::thread( [&]() {
+
+		ILOG("Starting connection handling thread");
+		
+		while(this->m_handle_connection) {
+			// if (!this->m_handle_connection) {
+			// 	std::unique_lock<std::mutex> lock(this->m_main_thread_mutex);
+			// 	this->m_main_thread_lock.wait(lock);
+			// }
+			LOG("Awaiting for new connection. Timeout is " << HANDLING_TIMEOUT << "ms");
+			Connection* connection = this->awaitNewConnection();
+			if (connection->isEmpty()) 
+				delete connection;
+			
+			if (!this->m_handle_message_income)
+				continue;
+
+			std::lock_guard<std::mutex> lock(this->m_message_income_threads_lock);
+			this->m_message_income_threads[*connection] = startNewMessageIncomeThread(connection);
+		}
+		LOG("Connection handling thread stopped");
+	} ) ) );
+
+	// this->startEventHandler();
 }
 void Server::stopConnectionHandling()
 {
 	m_handle_connection = false;
+	LOG("Deleting connection handling thread " << m_connection_handler);
+	if (m_connection_handler) {
+		m_connection_handler.load()->join();
+		delete this->m_connection_handler;
+	}
 }
 
-void Server::startMessageIncomeHandling(std::function<void(std::string &, Connection *)>)
+void Server::startMessageIncomeHandling(std::function<void(std::string &, Connection *)> on_recieve)
 {
+	LOG("Starting message income handling");
 	if (m_handle_message_income)
 		return;
+
+	if (on_recieve)
+		this->m_on_recieve = std::move(on_recieve);
 	
-	// starting threads for incomig connections
+	// starting threads for incoming connections
 	m_handle_message_income = true;
+
 	//starting threads for existing connections
 	std::lock_guard<std::mutex> lock(this->m_message_income_threads_lock);
-
-	for(size_t i = 0; i < this->m_connections.size(); i++)
-		m_message_income_threads[*this->m_connections[i]] = 
-			startNewMessageIncomeThread(this->m_connections[i]);
+	for(auto connection : this->m_connections)
+		m_message_income_threads.insert_or_assign(*connection, startNewMessageIncomeThread(connection));
 }
 void Server::stopMessageIncomeHandling()
 {
@@ -269,15 +304,29 @@ void Server::stopMessageIncomeHandling()
 }
 
 // * I/O methods
-void Server::sendMessage(const char * data, size_t index) const
+void Server::sendMessage(const char * data, size_t index)
 {
-	sendMessage((std::string)data, *this->m_connections[index]);
+	try {
+		sendMessage((std::string)data, *this->m_connections[index]);
+	}
+	catch (std::runtime_error &re) {
+		std::lock_guard<std::mutex> lock(m_connections_lock);
+		delete this->m_connections[index];
+		this->m_connections.erase(this->m_connections.begin() + index);
+	}
 }
-void Server::sendMessage(std::string data, size_t index) const
+void Server::sendMessage(std::string data, size_t index)
 {
-	sendMessage((std::string)data, *this->m_connections[index]);
+	try {
+		sendMessage((std::string)data, *this->m_connections[index]);
+	}
+	catch (std::runtime_error &re) {
+		std::lock_guard<std::mutex> lock(m_connections_lock);
+		delete this->m_connections[index];
+		this->m_connections.erase(this->m_connections.begin() + index);
+	}
 }
-void Server::sendMessage(std::string data, const Connection & connection) const
+void Server::sendMessage(std::string data, const Connection & connection)
 {
 	connection << data;
 }
@@ -324,18 +373,10 @@ Server::~Server()
 {
 	this->stopMessageIncomeHandling();
 	this->stopConnectionHandling();
-	this->stopEventHandler();
+	// this->stopEventHandler();
+	LOG("Threads stopped. Deleting connections");
 
 	std::lock_guard<std::mutex> lock(this->m_connections_lock);
 	for (auto &connection : this->m_connections)
 		delete connection;
-	
-	std::lock_guard<std::mutex> lock_threads(this->m_message_income_threads_lock);
-	for (auto &thread : this->m_message_income_threads) {
-		auto thread_ptr = thread.second;
-		thread_ptr->join();
-		delete thread_ptr;
-	}
-
-	delete this->m_main_thread.load();
 }

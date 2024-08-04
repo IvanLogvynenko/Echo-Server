@@ -6,75 +6,91 @@ const Connection Connection::empty = Connection();
 /// @brief Basic constructor
 /// @param socket_fd 
 Connection::Connection(int socket_fd) :
-    m_socket_fd(socket_fd)
+	m_socket_fd(socket_fd)
 {
-    m_isEmpty = socket_fd == -1;
-    if (m_isEmpty) 
-        ID = 0;
-    else {
-        ID = id++; 
-        LOG("Connection " << (int)this->ID << " opened");
-    }
-    
+	m_isEmpty = socket_fd == -1;
+	if (m_isEmpty) 
+		ID = 0;
+	else {
+		ID = id++; 
+		LOG("Connection " << (int)this->ID << " opened");
+	}
+	
 }
 
 Connection::~Connection() {
-    close(this->m_socket_fd);
-    if (this->ID != 0) {
-        LOG("Connection " << (int)this->ID << " closed");
-    }
+	close(this->m_socket_fd);
+	if (this->ID != 0) {
+		LOG("Connection " << (int)this->ID << " closed");
+	}
 }
 
 Connection & Connection::operator=(const Connection& other)
 {
-    if (this != &other) {
-        this->ID = other.ID;
-        this->m_socket_fd = other.m_socket_fd;
-        this->m_isEmpty = other.m_isEmpty;
-    }
-    return *this;
+	if (this != &other) {
+		this->ID = other.ID;
+		this->m_socket_fd = other.m_socket_fd;
+		this->m_isEmpty = other.m_isEmpty;
+	}
+	return *this;
+}
+
+bool Connection::operator==(const Connection& other) const
+{
+	return this->ID == other.ID && 
+		this->m_socket_fd == other.m_socket_fd && 
+		this->m_isEmpty == other.m_isEmpty;
 }
 
 bool Connection::isEmpty() const
 {
-    return this->m_isEmpty;
+	return this->m_isEmpty;
 }
 
 // now important functions
 bool Connection::checkValidity() const
 {
-    return this->m_socket_fd != -1 
-        && !this->m_isEmpty;
+	return this->m_socket_fd != -1 
+		&& !this->m_isEmpty;
 }
 u_int8_t Connection::getID() const
 {
-    return this->ID;
+	return this->ID;
 }
 Connection::operator int() const
 {
-    return this->m_socket_fd;
+	return this->m_socket_fd;
 }
 
+const Connection *Connection::operator<<(const char *data) const
+{
+	std::string temp(data);
+	return (*this << temp);
+}
 const Connection *Connection::operator<<(std::string &data) const
 {
-    ILOG("Sending message: " << data);
-    data.append("<END>");
+	ILOG("Sending message: " << data);
+
+	if (data.at(data.length() - 1) != '\n') {
+		data.append("\n");
+	}
+	
 	if (send(this->m_socket_fd, data.c_str(), data.length(), 0) == -1) {
 		EL("Message sending failed");
 		throw std::runtime_error("Message sending error");
 	}
-    return this;
+	return this;
 }
 
 const Connection* Connection::operator>>(std::string &data) const
 {
-    data = this->recieve();
-    return this;
+	data = this->recieve();
+	return this;
 }
 
 std::string Connection::recieve() const
 {
-    std::array<char, BUFFER_SIZE> buffer;
+	std::array<char, BUFFER_SIZE> buffer;
 	size_t data_size = 0;
 	std::string result = "";
 	while (true) {
@@ -84,12 +100,12 @@ std::string Connection::recieve() const
 			throw std::runtime_error("Failed to recieve data");
 		}
 		std::string current(buffer.data(), data_size);
-        // LOG("Received data: " << current);
-		if (current.find("<END>") != std::string::npos) {
-			result.append(current.erase(current.find("<END>"), 5));
-            break;
-        }
-        // LOG("Proccessed partial data: " << current);
+		// LOG("Received data: " << current);
+		if (current.find("\n") != std::string::npos) {
+			result.append(current);
+			break;
+		}
+		// LOG("Proccessed partial data: " << current);
 		result.append(current);
 	}
 	

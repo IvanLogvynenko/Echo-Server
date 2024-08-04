@@ -17,6 +17,7 @@ target_include_directories(server PRIVATE include/)
 target_compile_definitions(server PRIVATE EXECUTABLE_NAME="SERVER")
 # target_compile_definitions(server PRIVATE FULL_LOGGING)
 target_compile_definitions(server PRIVATE LOGGING)
+target_compile_definitions(server PRIVATE FULL_LOGGING)
 target_compile_definitions(server PRIVATE ERROR)
 # target_link_libraries(server PRIVATE ServerClientLib)
 

@@ -4,31 +4,60 @@
 #include <basic.hpp>
 
 int main() {
-    ILOG("Server: Execution started");
+	ILOG("Server: Execution started");
 
-    Server server = Server::host();
-    server.startConnectionHandling([&](Connection* new_connection) {
-        ILOG("Acquired new connection on socket " << *new_connection);
-        return new_connection;
-    });
+	LOG("Creating new server instance");
+	Server server = Server::host();
 
-    server.startMessageIncomeHandling([&](std::string message, Connection* connection) {
-        ILOG("Received message from connection " << *connection << ": " << message);
-        *connection << message;
-    });
+	// Connection* conn = server.awaitNewConnection([&](Connection* new_connection) {
+	//     ILOG("Acquired new connection on socket " << *new_connection);
+	//     return new_connection;
+	// });
 
-    // Connection* conn = server.awaitNewConnection([&](Connection* new_connection) {
-    //     ILOG("Acquired new connection on socket " << *new_connection);
-    //     return new_connection;
-    // });
+	// if (conn && conn->isEmpty()) {
+	//     delete conn;
+	//     return 1;
+	// }
 
-    // if (conn && conn->isEmpty())
-    //     delete conn;
+	ILOG("Starting connection handling in main");
+	server.startConnectionHandling([&](Connection* new_connection) {
+		ILOG("Acquired new connection on socket " << *new_connection);
+		*new_connection << "Hello, client! from thread";
+		return new_connection;
+	});
+	LOG("Connection handling started");
+	std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    // server.awaitNewMessage(conn, [&](std::string message, Connection* connection) {
-    //     ILOG("Received message from connection " << *connection << ": " << message);
-    //     *connection << message;
-    // });
+	// Connection* conn = server.awaitNewConnection([&](Connection* new_connection) {
+	//     ILOG("Acquired new connection on socket " << *new_connection);
+	// 	*new_connection << "Hello, client!";
+	//     return new_connection;
+	// });
 
-    return 0;
+	// if (conn && conn->isEmpty()) {
+	//     delete conn;
+	//     return 1;
+	// }
+
+	// ILOG("Starting message income handling in main");
+	// server.startMessageIncomeHandling([&](std::string message, Connection* connection) {
+	// 	ILOG("Received message from connection " << *connection << ": " << message);
+	// 	*connection << message;
+	// });
+	// LOG("Message income handling started");
+
+	// Connection* conn = server.awaitNewConnection([&](Connection* new_connection) {
+	//     ILOG("Acquired new connection on socket " << *new_connection);
+	//     return new_connection;
+	// });
+
+	// if (conn && conn->isEmpty())
+	//     delete conn;
+
+	// server.awaitNewMessage(conn, [&](std::string message, Connection* connection) {
+	//     ILOG("Received message from connection " << *connection << ": " << message);
+	//     *connection << message;
+	// });
+
+	return 0;
 }

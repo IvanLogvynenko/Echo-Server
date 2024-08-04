@@ -41,7 +41,16 @@ public:
     std::string recieve() const;
 
     const Connection* operator<<(std::string&) const;
+    const Connection* operator<<(const char*) const;
     const Connection* operator>>(std::string&) const;
 
     Connection& operator=(const Connection&);
+    bool operator==(const Connection&) const;
+};
+
+class ConnectionHashFunction {
+public:
+    size_t operator()(const Connection& connection) const {
+        return std::hash<uint8_t>{}(connection.getID()) ^ std::hash<int>{}(connection);
+    }
 };

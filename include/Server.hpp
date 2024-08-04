@@ -59,15 +59,15 @@ private:
 	
 
 
-	std::atomic_bool m_thread_stop, m_message_hangling_stop;
+	// std::atomic_bool m_thread_stop, m_message_hangling_stop;
 
 	std::mutex m_main_thread_mutex;
 	std::condition_variable m_main_thread_lock;
 
-	std::atomic<std::thread*> m_main_thread;
+	std::atomic<std::thread*> m_connection_handler;
 
 	std::mutex m_message_income_threads_lock;
-	std::unordered_map<int, std::thread*> m_message_income_threads;
+	std::unordered_map<Connection, std::thread*, ConnectionHashFunction> m_message_income_threads;
 protected:
 	/**
 	 * methods to control "central" thread that manages threads 
@@ -103,9 +103,9 @@ public:
 	void stopMessageIncomeHandling();
 
 	//* I/O interface
-	void sendMessage(const char* = "", size_t = 0) const;
-	void sendMessage(std::string = "", size_t = 0) const;
-	void sendMessage(std::string, const Connection& connection) const;
+	void sendMessage(const char* = "", size_t = 0);
+	void sendMessage(std::string = "", size_t = 0);
+	void sendMessage(std::string, const Connection& connection);
 
 	std::string recieveMessageFrom(size_t = 0);
 	std::string recieveMessageFrom(const Connection&);
