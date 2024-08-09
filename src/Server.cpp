@@ -73,8 +73,8 @@ std::string recieve(Connection *conn)
 		throw server_client::ConnectionClosedException();
 
 	std::string result(buffer.data(), data_size);
-	
-	if (result == Connection::CLOSE_MESSAGE)
+
+    if (result == Connection::CLOSE_MESSAGE)
 		throw server_client::ConnectionClosedException();
 
 	return result;
@@ -84,21 +84,13 @@ void server_client::Server::sendMessage(const char *data, Connection* conn) {
 	this->sendMessage(std::string(data), conn);
 }
 void server_client::Server::sendMessage(std::string data, Connection* conn) {
-	try {
-		if (data.at(data.length() - 1) != '\n')
-		data.append("\n");
-
 	ssize_t sent = send(*conn, data.c_str(), data.length(), 0);
-	std::cout << "Message sent: " << data << "sent=" << sent << std::endl;
+	
 	if (sent == -1) {
 		throw std::runtime_error("Message sending error");
 	}
 	else if (sent == 0)
-	    throw server_client::ConnectionClosedException();
-	}
-	catch (server_client::ConnectionClosedException &e) {
-        removeSocket(conn);
-    }
+		removeSocket(conn);
 }
 
 void server_client::Server::respond(const char *data)
@@ -114,7 +106,6 @@ void server_client::Server::respond(std::string data)
 
 std::string server_client::Server::awaitNewMessage(Connection* conn)
 {
-	std::cout << "Awaiting new message from connection " << *conn << std::endl;
 	pollfd poll_data = {*conn, POLLIN, 0 };
 	int poll_res = poll(&poll_data, 1, MESSAGE_INCOME_TIMEOUT);
 
@@ -200,8 +191,6 @@ void server_client::Server::startConnectionHandling(std::function<Connection*(Co
 	this->connection_handler = std::move(
 		new std::thread([&](std::function<Connection*(Connection*)> on_connect) {
 
-		std::cout << "Started connection handling thread" << std::endl;
-
 		this->connection_handler_stop_trigger = false;
 		while (!this->connection_handler_stop_trigger) {
 			pollfd poll_data = { *this, POLLIN, 0 };
@@ -254,6 +243,13 @@ void server_client::Server::startMessageIncomeHandling(std::function<void(std::s
 	for (auto connection : this->getConnections()) 
 		income_message_handlers[*connection] = this->startMessageIncomeHandlingThread(connection, this->on_recieve);
 }
+void server_client::Server::stopMessageIncomeHandling() {
+	this->message_handler_stop_trigger = true;
+	for (auto &[_, handler] : income_message_handlers) {
+        handler->join();
+        delete handler;
+    }
+}
 
 
 
@@ -274,15 +270,3 @@ server_client::Server::~Server() {
 	for (auto &conn : connections)
 	    delete conn;
 }
-
-
-
-
-
-
-
-
-
-
-
-

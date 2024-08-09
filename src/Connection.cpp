@@ -3,7 +3,7 @@
 using namespace server_client;
 
 unsigned int Connection::ID = 0;
-const std::string Connection::CLOSE_MESSAGE = "SYSTEM_MESSAGE<CONNECTION CLOSED>\n";
+const std::string Connection::CLOSE_MESSAGE = "SYSTEM_MESSAGE<CONNECTION CLOSED>";
 
 Connection::Connection(int sd) : 
 	sd(sd), 
@@ -26,7 +26,5 @@ Connection& Connection::operator=(const Connection& other) {
 
 
 server_client::Connection::~Connection() {
-	#include "stdio.h"
-	printf("Closing connection ID: %u\n", this->id);
 	close(this->sd);
 }
