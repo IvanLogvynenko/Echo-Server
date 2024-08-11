@@ -72,7 +72,7 @@ std::string recieve(Connection *conn)
 	else if (data_size == 0) 
 		throw server_client::ConnectionClosedException();
 
-	std::string result(buffer.data(), data_size);
+	std::string result(buffer.data(), (size_t)data_size);
 
     if (result == Connection::CLOSE_MESSAGE)
 		throw server_client::ConnectionClosedException();

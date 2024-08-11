@@ -1,13 +1,17 @@
 #ifndef SERVER
 #define SERVER
 
+#ifndef BUFFER_SIZE
+#define BUFFER_SIZE 1000
+#endif //!BUFFER_SIZE
+
 #ifndef LISTEN_BACKLOG
 #define LISTEN_BACKLOG 50
 #endif //!LISTEN_BACKLOG
 
 #ifndef DEFAULT_PORT
 #define DEFAULT_PORT 30000
-#endif // !DEFAULT_PORT
+#endif //!DEFAULT_PORT
 
 #ifndef CONNECTION_TIMEOUT
 #define CONNECTION_TIMEOUT 15000

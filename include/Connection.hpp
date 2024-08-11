@@ -1,10 +1,6 @@
 #ifndef CONNECTION_HPP
 #define CONNECTION_HPP
 
-#ifndef BUFFER_SIZE
-#define BUFFER_SIZE 1000
-#endif //!BUFFER_SIZE
-
 #include <cstdint>
 
 #include <stdexcept>
@@ -34,7 +30,7 @@ namespace server_client
 
 
 
-			inline int getId() const { return this->id; }
+			inline unsigned int getId() const { return this->id; }
 			inline int getSocket() const { return this->sd; }
 			inline operator int() const { return this->sd; }
 			inline bool isValid() const { return this->sd != -1 && this->sd != 0; }

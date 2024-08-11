@@ -7,6 +7,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wconversion -Werror -fsan
 add_library(ServerClientLib
 	src/Server.cpp
 	src/Connection.cpp
+	src/Client.cpp
 )
 target_include_directories(ServerClientLib PRIVATE "include/")
 
