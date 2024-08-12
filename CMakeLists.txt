@@ -9,12 +9,18 @@ add_library(ServerClientLib
 	src/Connection.cpp
 	src/Client.cpp
 )
-target_include_directories(ServerClientLib PRIVATE "include/")
+target_include_directories(ServerClientLib PRIVATE include)
 
 add_executable(
 	server
-	src/main.cpp
+	src/Server/main.cpp
 )
 target_link_libraries(server PRIVATE ServerClientLib)
-target_include_directories(server PRIVATE "include/")
+target_include_directories(server PRIVATE include)
 
+add_executable(
+	client
+	src/Client/main.cpp
+)
+target_link_libraries(client PRIVATE ServerClientLib)
+target_include_directories(client PRIVATE include)

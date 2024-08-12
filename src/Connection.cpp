@@ -4,6 +4,7 @@ using namespace server_client;
 
 unsigned int Connection::ID = 0;
 const std::string Connection::CLOSE_MESSAGE = "SYSTEM_MESSAGE<CONNECTION CLOSED>";
+const std::string Connection::SERVER_STOP = "SYSTEM_MESSAGE<SERVER STOP>";
 
 Connection::Connection(int sd) : 
 	sd(sd), 

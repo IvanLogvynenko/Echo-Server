@@ -36,6 +36,7 @@ namespace server_client
 			inline bool isValid() const { return this->sd != -1 && this->sd != 0; }
 
 			const static std::string CLOSE_MESSAGE;
+			const static std::string SERVER_STOP;
 	};
 
 	class ConnectionHashFunction {
