@@ -1,2 +1,10 @@
 .vscode/
 build/
+
+*.log
+
+*.tmp
+*.temp
+
+tmp/
+temp/

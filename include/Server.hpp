@@ -41,6 +41,8 @@
 
 #include "Connection.hpp"
 
+#include "Logger.hpp"
+
 namespace server_client
 {
 	class Server {
@@ -54,39 +56,39 @@ namespace server_client
 			std::atomic_bool connection_handler_stop_trigger = true;
 			std::atomic<std::thread*> connection_handler;
 
-			std::mutex message_handlers_lock;
-			std::atomic_bool message_handler_stop_trigger = true;
-			std::function<void(std::string&, Connection*)> on_recieve;
-			std::unordered_map<Connection, std::thread*, ConnectionHashFunction> income_message_handlers;
+			// std::mutex message_handlers_lock;
+			// std::atomic_bool message_handler_stop_trigger = true;
+			// std::function<void(std::string&, Connection*)> on_recieve;
+			// std::unordered_map<Connection, std::thread*, ConnectionHashFunction> income_message_handlers;
 
 			Server(int, int);
 		public:
 			Server& operator=(Server&);
-			~Server();
+			virtual ~Server();
 
 			static Server* host(uint16_t = DEFAULT_PORT);
 
 			// * I/O methods
-			void sendMessage(const char *, Connection*);
-			void sendMessage(std::string, Connection*);
+			virtual void sendMessage(const char *, Connection*);
+			virtual void sendMessage(std::string, Connection*);
 
-			void respond(const char*);
-			void respond(std::string);
+			virtual void respond(const char*);
+			virtual void respond(std::string);
 
-			std::string awaitNewMessage(Connection*);
+			virtual std::string awaitNewMessage(Connection*);
 
 			//* Server actions
-			std::thread* startMessageIncomeHandlingThread(Connection*, std::function<void(std::string&, Connection*)> = nullptr);
-			void awaitNewConnection(std::function<Connection*(Connection*)> = nullptr);
+			virtual std::thread* startMessageIncomeHandlingThread(Connection*, std::function<void(std::string&, Connection*)> = nullptr);
+			virtual void awaitNewConnection(std::function<Connection*(Connection*)> = nullptr);
 
-            void removeSocket(Connection*);
+            virtual void removeSocket(Connection*);
 
 			//* Thread management
-			void startConnectionHandling(std::function<Connection*(Connection*)> = nullptr);
-			void stopConnectionHandling();
+			virtual void startConnectionHandling(std::function<Connection*(Connection*)> = nullptr);
+			virtual void stopConnectionHandling();
 
-			void startMessageIncomeHandling(std::function<void(std::string&, Connection*)> = nullptr);
-			void stopMessageIncomeHandling();
+			virtual void startMessageIncomeHandling(std::function<void(std::string&, Connection*)> = nullptr);
+			virtual void stopMessageIncomeHandling();
 
 			//* geters
 			inline operator int() const { return socketd; }

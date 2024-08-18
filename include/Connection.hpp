@@ -7,10 +7,15 @@
 
 #include <array>
 #include <string>
-#include <sstream>
+
+#include <atomic>
+#include <thread>
+#include <functional>
 
 #include <unistd.h>
 #include <sys/socket.h>
+
+#include "Logger.hpp"
 	
 namespace server_client
 {
@@ -21,14 +26,18 @@ namespace server_client
 			int sd;
 			unsigned int id;
 
-			std::string backlog;
+			std::function<void(const std::string&)> on_message;
+			std::atomic<std::thread*> message_handler;
 		public:
 			Connection(int sd);
 			Connection(const Connection&);
 			~Connection();
 			Connection& operator=(const Connection&);
 
+			std::string awaitNewMessage();
+			std::string recieve();
 
+			void sendMessage(const std::string& message);
 
 			inline unsigned int getId() const { return this->id; }
 			inline int getSocket() const { return this->sd; }
@@ -39,12 +48,12 @@ namespace server_client
 			const static std::string SERVER_STOP;
 	};
 
-	class ConnectionHashFunction {
-	public:
-		size_t operator() (const server_client::Connection& connection) const {
-			return std::hash<int>{}(connection.getSocket());
-		}
-	};
+	// class ConnectionHashFunction {
+	// public:
+	// 	size_t operator() (const server_client::Connection& connection) const {
+	// 		return std::hash<int>{}(connection.getSocket());
+	// 	}
+	// };
 
 
 	class ConnectionClosedException : public std::exception {

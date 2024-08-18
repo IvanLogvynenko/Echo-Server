@@ -10,7 +10,7 @@
 #endif // !MAX_CONNECTION_ATTEMPTS
 
 #ifndef DEFAULT_PORT
-#define DEFAULT_PORT "30000"
+#define DEFAULT_PORT 30000
 #endif // !DEFAULT_PORT
 
 #include <iostream>
@@ -24,6 +24,8 @@
 
 #include "Connection.hpp"
 
+#include "Logger.hpp"
+
 namespace server_client {
 	class Client {
 		protected: Connection* connection;
@@ -34,16 +36,16 @@ namespace server_client {
 			~Client();
 
 			// I/O
-			void sendMessage(const char *);
-			void sendMessage(std::string);
+			virtual void sendMessage(const char *);
+			virtual void sendMessage(std::string);
 
-			std::string recieve();
+			virtual std::string recieve();
 
 			// net controll
-			void connectTo(std::string, std::string = DEFAULT_PORT);
-			void connectTo(std::string, uint16_t);
+			virtual void connectTo(std::string, std::string);
+			virtual void connectTo(std::string, uint16_t = DEFAULT_PORT);
 			
-			void disconnect();
+			virtual void disconnect();
 			
 			inline operator int() { return *connection; }
 	};

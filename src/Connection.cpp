@@ -8,24 +8,23 @@ const std::string Connection::SERVER_STOP = "SYSTEM_MESSAGE<SERVER STOP>";
 
 Connection::Connection(int sd) : 
 	sd(sd), 
-	id(ID++),
-	backlog("") {}
+	id(ID++) {}
 Connection::Connection(const Connection& other) : 
     sd(other.sd), 
-    id(other.id),
-	backlog(other.backlog) {}
+    id(other.id) {}
 Connection& Connection::operator=(const Connection& other) {
 	if (&other == this) 
 		return *this;
 
 	this->id = other.id;
 	this->sd = other.sd;
-	this->backlog = other.backlog;
 	return *this;
 }
 
 
 
 server_client::Connection::~Connection() {
+	Logger logger("Connection::~Connection()");
+	logger << Logger::important << "Closing connection with ID: " << this->id << std::endl;
 	close(this->sd);
 }
