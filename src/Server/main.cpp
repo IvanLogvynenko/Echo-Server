@@ -10,16 +10,16 @@ int main() {
 	    // ->logToFile("server.log")
 	    ->setExecutableName("SERVER");
 	Logger logger;
-	server_client::Server* server = server_client::Server::host(8080);
+	Server* server = Server::host(8080);
 	logger << Logger::important << "Server started on port 8080" << std::endl;
 
-	server->startConnectionHandling([&](server_client::Connection *conn) {
-		server->sendMessage("Hello, client!", conn);
-		return conn;
+	server->startConnectionHandling([&](const Connection *conn) {
+		conn->sendMessage("Hello, client!");
+		// return conn;
 	});
 	logger << "Server is listening for incoming connections..." << std::endl;
-	server->startMessageIncomeHandling([&](std::string message, server_client::Connection *conn) {
-		server->sendMessage("Received: " + message, conn);
+	server->startMessageIncomeHandling([&](const std::string message, const Connection *conn) {
+		conn->sendMessage("Received: " + message);
 	});
 	logger << "Server is responding to incoming messages..." << std::endl;
 
