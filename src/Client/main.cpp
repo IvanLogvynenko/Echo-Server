@@ -6,11 +6,9 @@
 // #include "LogLevel.hpp"
 
 int main() {
+	LoggerConfig::getInstance()->setExecutableName("CLIENT");
 	Logger logger;
-	LoggerConfig::getInstance()
-		// ->ignoreLevels({LogLevel::DEBUG})
-		// ->logToFile("client.log")
-		->setExecutableName("CLIENT");
+	
 	Client client;
 
 	logger << "Client started." << std::endl;
