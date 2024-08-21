@@ -24,4 +24,5 @@ int main() {
 	} catch (ConnectionClosedException& e) {
 		logger << Logger::critical << "Connection closed by server" << std::endl;
 	}
+	Logger::flush();
 }

@@ -9,6 +9,7 @@ int main() {
 	LoggerConfig::getInstance()->setExecutableName("SERVER");
 
 	Logger logger;
+	logger << Logger::important << "Starting server..." << std::endl;
 	Server* server = Server::host(8080);
 	logger << Logger::important << "Server started on port 8080" << std::endl;
 
@@ -24,5 +25,6 @@ int main() {
 
 	delete server;
 	logger << Logger::important << "Server stopped" << std::endl;
+	Logger::flush();
 	return 0;
 }
